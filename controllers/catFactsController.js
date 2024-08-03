@@ -35,11 +35,11 @@ const deleteCatFact = (req, res) => {
 
 const voteCatFact = (req, res) => {
   const { id } = req.params;
-  const voted = catFactsService.voteCatFact(id);
-  if (!voted) {
+  const votedFact = catFactsService.voteCatFact(id);
+  if (!votedFact) {
     return res.status(404).json({ message: 'Cat fact not found' });
   }
-  res.status(200).json({ message: 'Vote added', fact: catFactsService.getCatFact(id) });
+  res.status(200).json({ message: 'Vote added', fact: votedFact });
 };
 
 const getMostPopularCatFact = (req, res) => {
@@ -50,7 +50,6 @@ const getMostPopularCatFact = (req, res) => {
   res.status(200).json(mostPopular);
 };
 
-// Exportar os métodos
 module.exports = {
   getAllCatFacts,
   addCatFact,

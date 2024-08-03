@@ -47,9 +47,9 @@ function deleteCatFact(id) {
 
 function voteCatFact(id) {
   const fact = catfacts.find(fact => fact._id === id);
-  if (!fact) return false;
+  if (!fact) return null; // Retorna null se o fact não for encontrado
   fact.votes += 1;
-  return true;
+  return fact; // Retorna o fact atualizado
 }
 
 function getCatFact(id) {
