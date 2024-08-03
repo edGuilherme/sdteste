@@ -1,5 +1,8 @@
 const catFactsService = require('../services/catFactsService');
 const js2xmlparser = require("js2xmlparser"); // transforma json em XML - usado na resposta
+const { v4: uuidv4 } = require('uuid');
+
+let currentId = 1;
 
 const getAllCatFacts = (req, res) => {
   const catFacts = catFactsService.getCatFacts();
@@ -13,21 +16,33 @@ const getAllCatFacts = (req, res) => {
 
 const addCatFact = (req, res) => {
   const newFact = req.body;
+  
+  // Validação básica do campo 'text'
   if (!newFact.text) {
+    const errorResponse = { message: 'Text field is required' };
     if (req.headers.accept === 'application/xml') {
       res.set('Content-Type', 'application/xml');
-      return res.status(400).send(js2xmlparser.parse("error", { message: 'Text field is required' }));
+      return res.status(400).send(js2xmlparser.parse("error", errorResponse));
     }
-    return res.status(400).json({ message: 'Text field is required' });
+    return res.status(400).json(errorResponse);
   }
+
+  // Adiciona um novo ID, garantindo que é um hexa
+  newFact._id = uuidv4().replace(/-/g, '').substring(0, 24);
+  
+  // Adiciona o novo cat fact usando o serviço
   catFactsService.addCatFact(newFact);
+  
+  // Prepara a resposta
   const response = { message: 'Cat fact added', catFacts: catFactsService.getCatFacts() };
+  
+  // Envia a resposta no formato adequado
   if (req.headers.accept === 'application/xml') {
     res.set('Content-Type', 'application/xml');
-    res.status(201).send(js2xmlparser.parse("response", response));
-  } else {
-    res.status(201).json(response);
+    return res.status(201).send(js2xmlparser.parse("response", response));
   }
+  
+  res.status(201).json(response);
 };
 
 const updateCatFact = (req, res) => {

@@ -25,8 +25,13 @@ function getCatFacts() {
 }
 
 function addCatFact(newFact) {
+  if (!newFact || !newFact._id || !newFact.text) {
+    console.error('Invalid cat fact:', newFact);
+    return false;
+  }
   newFact.votes = 0; // Inicializa o número de votos para o novo cat fact
   catfacts.push(newFact);
+  return true;
 }
 
 function updateCatFact(id, text) {
