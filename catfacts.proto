@@ -1,26 +1,25 @@
 syntax = "proto3";
 
-message CatFactCollection {
-  repeated CatFact facts = 1;
-}
-
 message CatFact {
+  message Status {
+    bool verified = 1;
+    int32 sentCount = 2;
+  }
+
   Status status = 1;
   string id = 2;
   string user = 3;
   string text = 4;
   int32 v = 5;
   string source = 6;
-  string updated_at = 7;
+  string updatedAt = 7;
   string type = 8;
-  string created_at = 9;
+  string createdAt = 9;
   bool deleted = 10;
   bool used = 11;
   int32 votes = 12;
 }
 
-message Status {
-  bool verified = 1;
-  int32 sent_count = 2;
-  string feedback = 3;
+message CatFactList {
+  repeated CatFact facts = 1;
 }

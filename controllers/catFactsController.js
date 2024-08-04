@@ -3,32 +3,43 @@ const js2xmlparser = require("js2xmlparser"); // transforma json em XML - usado 
 const protobuf = require('protobufjs');
 const { v4: uuidv4 } = require('uuid');
 
-let CatBuffer;
-//carrega definição protobuf
-protobuf.load('./catfacts.proto', (err, root) => {
-  if (err) {
-    console.error('Error loading protobuf file:', err);
-    return;
-  }
-  CatBuffer = root.lookupType('CatFactCollection');
-});
 
-// Converte um objeto JSON para o formato Protobuf
-function jsonToProtobuf(jsonObject) {
-  // Verifica se o payload é válido (por exemplo, quando incompleto ou inválido)
-  const errMsg = CatBuffer.verify(jsonObject);
-  if (errMsg)
-    throw Error(errMsg);
+async function convertJsonToProtobuf(jsonData) {
+  // Load the .proto file
+  const root = await protobuf.load('./catfacts.proto');
 
-  // Cria uma nova mensagem
-  const message = CatBuffer.create(jsonObject);
+  // Get the message types
+  const CatFact = root.lookupType('CatFact');
+  const CatFactList = root.lookupType('CatFactList');
 
-  // Codifica a mensagem
-  const buffer = CatBuffer.encode(message).finish();
+  // Convert each fact in the JSON array
+  const facts = jsonData.map(fact => {
+    return CatFact.create({
+      status: {
+        verified: fact.status.verified,
+        sentCount: fact.status.sentCount
+      },
+      id: fact._id,
+      user: fact.user,
+      text: fact.text,
+      v: fact.__v,
+      source: fact.source,
+      updatedAt: fact.updatedAt,
+      type: fact.type,
+      createdAt: fact.createdAt,
+      deleted: fact.deleted,
+      used: fact.used,
+      votes: fact.votes
+    });
+  });
+   // Create the CatFactList message
+   const catFactList = CatFactList.create({ facts });
 
-  return buffer;
+   // Encode the message
+   const buffer = CatFactList.encode(catFactList).finish();
+ 
+   return buffer;
 }
-
 const getAllCatFacts = (req, res) => {
   const catFacts = catFactsService.getCatFacts();
   switch (req.headers.accept) {
@@ -39,8 +50,14 @@ const getAllCatFacts = (req, res) => {
       break;
     case 'application/x-protobuf': // Protobuf
       res.set('Content-Type', 'application/x-protobuf');
-      // Converte os dados para o formato Protobuf e envia a resposta
-      res.send(jsonToProtobuf(catFacts));
+      // Envia a resposta no formato Protobuf
+      convertJsonToProtobuf(catFacts)
+      .then(buffer => {
+        res.send(buffer);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
       break;
     default: // JSON padrão
       // Envia a resposta no formato JSON
