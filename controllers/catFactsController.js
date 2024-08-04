@@ -3,27 +3,28 @@ const js2xmlparser = require("js2xmlparser"); // transforma json em XML - usado 
 const protobuf = require('protobufjs');
 const { v4: uuidv4 } = require('uuid');
 
+let CatBuffer;
 //carrega definição protobuf
-protobuf.load('catfacts.proto', (err, root) => {
+protobuf.load('./catfacts.proto', (err, root) => {
   if (err) {
     console.error('Error loading protobuf file:', err);
     return;
   }
-  const CatFacts = root.lookupType('CatFacts');
+  CatBuffer = root.lookupType('CatFactCollection');
 });
 
 // Converte um objeto JSON para o formato Protobuf
 function jsonToProtobuf(jsonObject) {
   // Verifica se o payload é válido (por exemplo, quando incompleto ou inválido)
-  const errMsg = CatFacts.verify(jsonObject);
+  const errMsg = CatBuffer.verify(jsonObject);
   if (errMsg)
     throw Error(errMsg);
 
   // Cria uma nova mensagem
-  const message = CatFacts.create(jsonObject);
+  const message = CatBuffer.create(jsonObject);
 
   // Codifica a mensagem
-  const buffer = CatFacts.encode(message).finish();
+  const buffer = CatBuffer.encode(message).finish();
 
   return buffer;
 }
