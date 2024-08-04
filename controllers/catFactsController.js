@@ -1,19 +1,52 @@
 const catFactsService = require('../services/catFactsService');
 const js2xmlparser = require("js2xmlparser"); // transforma json em XML - usado na resposta
+const protobuf = require('protobufjs');
 const { v4: uuidv4 } = require('uuid');
 
-let currentId = 1;
+//carrega definição protobuf
+protobuf.load('catfacts.proto', (err, root) => {
+  if (err) {
+    console.error('Error loading protobuf file:', err);
+    return;
+  }
+  const CatFacts = root.lookupType('CatFacts');
+});
+
+// Converte um objeto JSON para o formato Protobuf
+function jsonToProtobuf(jsonObject) {
+  // Verifica se o payload é válido (por exemplo, quando incompleto ou inválido)
+  const errMsg = CatFacts.verify(jsonObject);
+  if (errMsg)
+    throw Error(errMsg);
+
+  // Cria uma nova mensagem
+  const message = CatFacts.create(jsonObject);
+
+  // Codifica a mensagem
+  const buffer = CatFacts.encode(message).finish();
+
+  return buffer;
+}
 
 const getAllCatFacts = (req, res) => {
   const catFacts = catFactsService.getCatFacts();
-  if (req.headers.accept === 'application/xml') {
-    res.set('Content-Type', 'application/xml');
-    res.send(js2xmlparser.parse("catFacts", catFacts));
-  } else {
-    res.status(200).json(catFacts);
+  switch (req.headers.accept) {
+    case 'application/xml': // XML
+      res.set('Content-Type', 'application/xml');
+      // Envia a resposta no formato XML
+      res.send(js2xmlparser.parse("catFacts", catFacts));
+      break;
+    case 'application/x-protobuf': // Protobuf
+      res.set('Content-Type', 'application/x-protobuf');
+      // Converte os dados para o formato Protobuf e envia a resposta
+      res.send(jsonToProtobuf(catFacts));
+      break;
+    default: // JSON padrão
+      // Envia a resposta no formato JSON
+      res.status(200).json(catFacts);
+      break;
   }
 };
-
 const addCatFact = (req, res) => {
   const newFact = req.body;
   
